@@ -12,42 +12,17 @@ from collections import deque
 
 
 def solution(map):
-    def neighbors(map, node, visited, did_demolish):
-        def is_possible_neighbor(i, j, map, visited):
-            height = len(map)
-            width = len(map[0])
-            return (
-                0 <= i <= height - 1 and 0 <= j <= width - 1 and (i, j) not in visited
-            )
+    height = len(map)
+    width = len(map[0])
 
-        i, j = node
-        i -= 1
-        if is_possible_neighbor(i, j, map, visited):
-            if map[i][j] == 0:
-                yield (i, j), did_demolish
-            elif not did_demolish:
-                yield (i, j), True
-        i, j = node
-        i += 1
-        if is_possible_neighbor(i, j, map, visited):
-            if map[i][j] == 0:
-                yield (i, j), did_demolish
-            elif not did_demolish:
-                yield (i, j), True
-        i, j = node
-        j -= 1
-        if is_possible_neighbor(i, j, map, visited):
-            if map[i][j] == 0:
-                yield (i, j), did_demolish
-            elif not did_demolish:
-                yield (i, j), True
-        i, j = node
-        j += 1
-        if is_possible_neighbor(i, j, map, visited):
-            if map[i][j] == 0:
-                yield (i, j), did_demolish
-            elif not did_demolish:
-                yield (i, j), True
+    def neighbors(map, node, visited, did_demolish):
+        for move in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            i, j = node[0] + move[0], node[1] + move[1]
+            if 0 <= i < height and 0 <= j < width and (i, j) not in visited:
+                if map[i][j] == 0:
+                    yield (i, j), did_demolish
+                elif not did_demolish:
+                    yield (i, j), True
 
     def bfs(map, node, previous, queue):
         did_demolish = False
@@ -63,8 +38,6 @@ def solution(map):
                     if neighbor == (height - 1, width - 1):
                         break
 
-    height = len(map)
-    width = len(map[0])
     previous = {(0, 0): None}
     bfs(map, (0, 0), previous, deque())
     length = 1
@@ -76,15 +49,17 @@ def solution(map):
 
 
 map = [[0, 0], [0, 0]]
-# print(solution(map))
 assert 3 == solution(map)
 
-# 7
 map = [[0, 1, 1, 0], [0, 0, 0, 1], [1, 1, 0, 0], [1, 1, 1, 0]]
-# print(solution(map))
 assert 7 == solution(map)
 
-# 21
+map = [[0, 1, 0, 0, 0], [0, 0, 0, 1, 0], [1, 1, 1, 1, 0]]
+assert 7 == solution(map)
+
+map = [[0, 1, 1, 1], [0, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]]
+assert 7 == solution(map)
+
 map = [
     [0, 0, 0, 0, 0, 0],
     [1, 1, 1, 1, 1, 0],
@@ -94,3 +69,40 @@ map = [
     [0, 0, 0, 0, 0, 0],
 ]
 assert 11 == solution(map)
+
+map = [
+    [0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0],
+]
+assert 21 == solution(map)
+
+map = [
+    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+]
+assert 39 == solution(map)
+
+map = [[0, 1, 1, 0, 1, 0, 0], [0, 0, 0, 0, 1, 1, 0]]
+assert 10 == solution(map)
