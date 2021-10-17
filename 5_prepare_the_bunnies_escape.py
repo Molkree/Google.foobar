@@ -18,31 +18,43 @@ def solution(map):
     def neighbors(map, node, visited, did_demolish):
         for move in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
             i, j = node[0] + move[0], node[1] + move[1]
-            if 0 <= i < height and 0 <= j < width and (i, j) not in visited:
-                if map[i][j] == 0:
+            if 0 <= i < height and 0 <= j < width:
+                if (
+                    map[i][j] == 0
+                    # don't visit nodes after demolishing the wall that can be visited w/o demolishing
+                    and not (
+                        did_demolish
+                        and (((i, j), False) in visited or ((i, j), True) in visited)
+                    )
+                    # don't create cycles
+                    and not (not did_demolish and ((i, j), False) in visited)
+                ):
                     yield (i, j), did_demolish
-                elif not did_demolish:
+                elif (
+                    map[i][j] == 1
+                    and not did_demolish
+                    and ((i, j), True) not in visited
+                ):
                     yield (i, j), True
 
     def bfs(map, node, previous, queue):
         did_demolish = False
         queue.append((node, did_demolish))
         while queue:
-            next_node, did_demolish = queue.popleft()
+            next_node, node_demolished = queue.popleft()
             for neighbor, did_demolish in neighbors(
-                map, next_node, previous, did_demolish
+                map, next_node, previous, node_demolished
             ):
-                if neighbor not in previous:
-                    previous[neighbor] = next_node
-                    queue.append((neighbor, did_demolish))
-                    if neighbor == (height - 1, width - 1):
-                        break
+                previous[(neighbor, did_demolish)] = (next_node, node_demolished)
+                queue.append((neighbor, did_demolish))
+                if neighbor == (height - 1, width - 1):
+                    return did_demolish
 
-    previous = {(0, 0): None}
-    bfs(map, (0, 0), previous, deque())
+    previous = {}
+    did_demolish = bfs(map, (0, 0), previous, deque())
     length = 1
-    node = (height - 1, width - 1)
-    while node != (0, 0):
+    node = ((height - 1, width - 1), did_demolish)
+    while node != ((0, 0), False):
         node = previous[node]
         length += 1
     return length
@@ -104,5 +116,5 @@ map = [
 ]
 assert 39 == solution(map)
 
-map = [[0, 1, 1, 0, 1, 0, 0], [0, 0, 0, 0, 1, 1, 0]]
-assert 10 == solution(map)
+map = [[0, 1, 1, 1, 1], [0, 0, 0, 1, 0]]
+assert 6 == solution(map)
