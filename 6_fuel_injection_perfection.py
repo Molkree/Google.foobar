@@ -40,5 +40,6 @@ assert solution("2") == 1
 assert solution("3") == 2
 assert solution("4") == 2
 assert solution("5") == 3
+assert solution("10") == 4
 assert solution("15") == 5
 assert solution("16") == 4
