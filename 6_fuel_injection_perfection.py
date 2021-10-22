@@ -18,21 +18,18 @@
 # solution(15) returns 5: 15 -> 16 -> 8 -> 4 -> 2 -> 1
 
 
-from math import ceil, floor, log
-
-
-def closest_power_of_2(n):
-    floor_log = int(floor(log(n, 2)))
-    ceil_log = int(ceil(log(n, 2)))
-    floor_distance = abs(n - 2 ** floor_log)
-    ceil_distance = abs(n - 2 ** ceil_log)
-    return floor_log if floor_distance <= ceil_distance else ceil_log
-
-
 def solution(n):
     pellets = int(n)
-    closest_power = closest_power_of_2(pellets)
-    return abs(pellets - 2 ** closest_power) + closest_power
+    count = 0
+    while pellets > 1:
+        if pellets % 2 == 0:
+            pellets //= 2
+        elif pellets == 3 or pellets % 4 == 1:
+            pellets -= 1
+        else:
+            pellets += 1
+        count += 1
+    return count
 
 
 assert solution("1") == 0
@@ -40,6 +37,8 @@ assert solution("2") == 1
 assert solution("3") == 2
 assert solution("4") == 2
 assert solution("5") == 3
+assert solution("6") == 3
 assert solution("10") == 4
+assert solution("13") == 5
 assert solution("15") == 5
 assert solution("16") == 4
