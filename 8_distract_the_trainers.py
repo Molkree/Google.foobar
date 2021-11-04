@@ -18,10 +18,73 @@
 # The number of trainers will be at least 1 and not more than 100, and the number of bananas each trainer starts with will be a positive integer no more than 1073741823 (i.e. 2^30 -1). Some of them stockpile a LOT of bananas.
 
 
+from typing import Generator
+
+
+def all_pairs(lst):
+    # type: (list[int]) -> Generator[list[tuple[int, int]], None, None]
+    # Code by user shang on StackOverflow
+    # https://stackoverflow.com/a/5360442/6026285
+    if len(lst) < 2:
+        yield []
+        return
+    if len(lst) % 2 == 1:
+        # Handle odd length list
+        for i in range(len(lst)):
+            for result in all_pairs(lst[:i] + lst[i + 1 :]):
+                yield result
+    else:
+        a = lst[0]
+        for i in range(1, len(lst)):
+            pair = (a, lst[i])
+            for rest in all_pairs(lst[1:i] + lst[i + 1 :]):
+                yield [pair] + rest
+
+
+def check_pair(num_1, num_2, good_pairs, bad_pairs):
+    # type: (int, int, set[tuple[int, int]], set[tuple[int, int]]) -> bool
+    pairs = set()  # type: set[tuple[int, int]]
+    while num_1 != num_2:
+        if num_1 > num_2:
+            num_1, num_2 = num_2, num_1
+        pair = num_1, num_2
+        if pair in bad_pairs:
+            break
+        if pair in pairs or pair in good_pairs:
+            good_pairs |= pairs
+            return True
+        pairs.add(pair)
+        num_1, num_2 = num_1 * 2, num_2 - num_1
+    bad_pairs |= pairs
+    return False
+
+
 def solution(banana_list):
     # type: (list[int]) -> int
-    return -1
+    good_pairs = set()  # type: set[tuple[int, int]]
+    bad_pairs = set()  # type: set[tuple[int, int]]
+    max_busy_trainers = 0
+    for pairs in all_pairs(banana_list):
+        busy_trainers = 0
+        for num_1, num_2 in pairs:
+            if check_pair(num_1, num_2, good_pairs, bad_pairs):
+                busy_trainers += 2
+        max_busy_trainers = max(max_busy_trainers, busy_trainers)
+        if max_busy_trainers >= len(banana_list) - 1:
+            break
+    return len(banana_list) - max_busy_trainers
 
+
+good_pairs = set()  # type: set[tuple[int, int]]
+bad_pairs = set()  # type: set[tuple[int, int]]
+check_pair(3, 5, good_pairs, bad_pairs)
+check_pair(1, 4, good_pairs, bad_pairs)
+check_pair(1, 1, good_pairs, bad_pairs)
+check_pair(1, 21, good_pairs, bad_pairs)
+check_pair(7, 13, good_pairs, bad_pairs)
+check_pair(3, 19, good_pairs, bad_pairs)
+check_pair(7, 1, good_pairs, bad_pairs)
+check_pair(2 ** 30 - 1, 1, good_pairs, bad_pairs)
 
 assert solution([3, 5]) == 2
 
@@ -30,3 +93,5 @@ assert solution([1, 4]) == 0
 assert solution([1, 1]) == 2
 
 assert solution([1, 7, 3, 21, 13, 19]) == 0
+
+print(solution([1, 7, 21]))
