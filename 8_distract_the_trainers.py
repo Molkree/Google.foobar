@@ -62,14 +62,14 @@ def solution(banana_list):
     return len(banana_list) - max_busy_trainers
 
 
-check_pair(3, 5)
-check_pair(1, 4)
-check_pair(1, 1)
-check_pair(1, 21)
-check_pair(7, 13)
-check_pair(3, 19)
-check_pair(7, 1)
-check_pair(2 ** 30 - 1, 1)
+assert not check_pair(3, 5)
+assert check_pair(1, 4)
+assert not check_pair(1, 1)
+assert check_pair(1, 21)
+assert check_pair(7, 13)
+assert check_pair(3, 19)
+assert not check_pair(7, 1)
+assert not check_pair(2 ** 30 - 1, 1)
 
 assert solution([3, 5]) == 2
 
@@ -79,5 +79,5 @@ assert solution([1, 1]) == 2
 
 assert solution([1, 7, 3, 21, 13, 19]) == 0
 
-print(solution([1, 7, 21]))
-print(solution([3, 3, 2, 6, 6]))
+assert solution([1, 7, 21]) == 1
+assert solution([3, 3, 2, 6, 6]) == 1
