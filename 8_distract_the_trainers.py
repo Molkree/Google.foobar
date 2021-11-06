@@ -19,6 +19,7 @@
 
 
 from typing import Generator
+from fractions import gcd
 
 
 def all_pairs(lst):
@@ -41,33 +42,19 @@ def all_pairs(lst):
                 yield [pair] + rest
 
 
-def check_pair(num_1, num_2, good_pairs, bad_pairs):
-    # type: (int, int, set[tuple[int, int]], set[tuple[int, int]]) -> bool
-    pairs = set()  # type: set[tuple[int, int]]
-    while num_1 != num_2:
-        if num_1 > num_2:
-            num_1, num_2 = num_2, num_1
-        pair = num_1, num_2
-        if pair in bad_pairs:
-            break
-        if pair in pairs or pair in good_pairs:
-            good_pairs |= pairs
-            return True
-        pairs.add(pair)
-        num_1, num_2 = num_1 * 2, num_2 - num_1
-    bad_pairs |= pairs
-    return False
+def check_pair(num_1, num_2):
+    # type: (int, int) -> bool
+    n = (num_1 + num_2) // gcd(num_1, num_2)  # type: int
+    return (n & (n - 1)) != 0
 
 
 def solution(banana_list):
     # type: (list[int]) -> int
-    good_pairs = set()  # type: set[tuple[int, int]]
-    bad_pairs = set()  # type: set[tuple[int, int]]
     max_busy_trainers = 0
     for pairs in all_pairs(banana_list):
         busy_trainers = 0
         for num_1, num_2 in pairs:
-            if check_pair(num_1, num_2, good_pairs, bad_pairs):
+            if check_pair(num_1, num_2):
                 busy_trainers += 2
         max_busy_trainers = max(max_busy_trainers, busy_trainers)
         if max_busy_trainers >= len(banana_list) - 1:
@@ -75,16 +62,14 @@ def solution(banana_list):
     return len(banana_list) - max_busy_trainers
 
 
-good_pairs = set()  # type: set[tuple[int, int]]
-bad_pairs = set()  # type: set[tuple[int, int]]
-check_pair(3, 5, good_pairs, bad_pairs)
-check_pair(1, 4, good_pairs, bad_pairs)
-check_pair(1, 1, good_pairs, bad_pairs)
-check_pair(1, 21, good_pairs, bad_pairs)
-check_pair(7, 13, good_pairs, bad_pairs)
-check_pair(3, 19, good_pairs, bad_pairs)
-check_pair(7, 1, good_pairs, bad_pairs)
-check_pair(2 ** 30 - 1, 1, good_pairs, bad_pairs)
+check_pair(3, 5)
+check_pair(1, 4)
+check_pair(1, 1)
+check_pair(1, 21)
+check_pair(7, 13)
+check_pair(3, 19)
+check_pair(7, 1)
+check_pair(2 ** 30 - 1, 1)
 
 assert solution([3, 5]) == 2
 
@@ -95,3 +80,4 @@ assert solution([1, 1]) == 2
 assert solution([1, 7, 3, 21, 13, 19]) == 0
 
 print(solution([1, 7, 21]))
+print(solution([3, 3, 2, 6, 6]))
