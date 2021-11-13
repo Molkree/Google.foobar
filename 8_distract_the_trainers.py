@@ -19,7 +19,9 @@
 
 
 from typing import Generator
-from fractions import gcd
+
+# from fractions import gcd
+from math import gcd
 
 
 def all_pairs(lst):
@@ -76,6 +78,162 @@ def solution(banana_list):
     return len(banana_list) - max_busy_trainers
 
 
+class Graph:
+    class Node:
+        def __init__(self, count) -> None:
+            # type: (int) -> None
+            self.count = count
+            self.marked = False
+
+    class Edge:
+        def __init__(self, node_1, node_2) -> None:
+            # type: (Graph.Node, Graph.Node) -> None
+            self.node_1 = node_1
+            self.node_2 = node_2
+            self.marked = False
+
+    def __init__(self, banana_list):
+        # type: (list[int]) -> None
+        self.nodes = [Graph.Node(count) for count in banana_list]
+        self.neighbors = {
+            node: [] for node in self.nodes
+        }  # type: dict[Graph.Node, list[Graph.Edge]]
+        good_pairs = set()  # type: set[tuple[int, int]]
+        bad_pairs = set()  # type: set[tuple[int, int]]
+        for i, trainer in enumerate(banana_list):
+            for j, other_trainer in enumerate(banana_list[i + 1 :], i + 1):
+                if check_pair(trainer, other_trainer, good_pairs, bad_pairs):
+                    node = self.nodes[i]
+                    other_node = self.nodes[j]
+                    self.neighbors[node].append(Graph.Edge(node, other_node))
+                    self.neighbors[other_node].append(Graph.Edge(other_node, node))
+
+    def unmark_all_nodes(self):
+        # type: () -> None
+        for node in self.nodes:
+            node.marked = False
+
+    def unmark_all_edges(self):
+        # type: () -> None
+        for node_neighbors in self.neighbors.values():
+            for edge in node_neighbors:
+                edge.marked = False
+
+    def exposed_nodes(self, matching):
+        # type: (Matching) -> set[Graph.Node]
+        return set(self.nodes) - matching.nodes
+
+    def unmarked_edge(self, node):
+        # type: (Graph.Node) -> Graph.Edge | None
+        for edge in self.neighbors[node]:
+            if not edge.marked:
+                return edge
+
+
+class Matching:
+    nodes = set()  # type: set[Graph.Node]
+    edges = {}  # type: dict[Graph.Node, Graph.Edge]
+
+    def augment(self, path):
+        # type: (list[Graph.Node]) -> Matching
+        raise NotImplementedError
+        return self
+
+    def mark_all_edges(self):
+        # type: () -> None
+        for edge in self.edges:
+            edge.marked = True
+
+
+# class Path:
+#     def __init__(self, edges) -> None:
+#         # type: (list[Graph.Edge]) -> None
+#         self.edges = edges
+
+
+class Forest:
+    class Tree:
+        def __init__(self, node) -> None:
+            # type: (Graph.Node) -> None
+            self.root = node
+            self.parents = {node: node}
+            self.depths = {node: 0}
+
+        def add_edge(self, edge):
+            # type: (Graph.Edge) -> None
+            self.parents[edge.node_2] = edge.node_1
+            self.depths[edge.node_2] = self.depths[edge.node_1] + 1
+
+        def bottom_up_path(self, node):
+            # type: (Graph.Node) -> list[Graph.Node]
+            result = []  # type: list[Graph.Node]
+            while self.parents[node] != node:
+                result.append(node)
+                node = self.parents[node]
+            return result
+
+    def __init__(self, nodes) -> None:
+        # type: (set[Graph.Node]) -> None
+        self.trees = [Forest.Tree(node) for node in nodes]
+
+    def nodes(self):
+        # type: () -> set[Graph.Node]
+        result = set()  # type: set[Graph.Node]
+        for tree in self.trees:
+            result = result.union(tree.parents.keys())
+        return result
+        # return set.union(*(set(tree.parents.keys()) for tree in self.trees))  # type: set[Graph.Node]
+
+    def unmarked_even_node(self):
+        # type: () -> tuple[Graph.Node, Forest.Tree] | None
+        for tree in self.trees:
+            for node in tree.parents:
+                if not node.marked and tree.depths[node] % 2 == 0:
+                    return node, tree
+
+    def find_tree(self, node):
+        # type: (Graph.Node) -> Forest.Tree | None
+        for tree in self.trees:
+            if node in tree.parents:
+                return tree
+
+
+def find_augmenting_path(graph, matching):
+    # type: (Graph, Matching) -> list[Graph.Node]
+    graph.unmark_all_nodes()
+    graph.unmark_all_edges()
+    matching.mark_all_edges()
+    forest = Forest(graph.exposed_nodes(matching))
+    unmarked_node_and_tree = forest.unmarked_even_node()
+    while unmarked_node_and_tree:
+        v, tree = unmarked_node_and_tree
+        e = graph.unmarked_edge(v)
+        while e:
+            w = e.node_2
+            if w not in forest.nodes():
+                tree.add_edge(e)
+                tree.add_edge(matching.edges[w])
+            else:
+                if tree.depths[w] % 2 == 0:
+                    another_tree = forest.find_tree(w)
+                    if another_tree and tree.root != another_tree.root:
+                        return list(reversed(tree.bottom_up_path(v))) + another_tree.bottom_up_path(w)
+                    else:
+                        # contract
+                        # blossom = [e]
+
+    raise NotImplementedError
+    return []
+
+
+def find_maximum_matching(graph, matching):
+    # type: (Graph, Matching) -> Matching
+    path = find_augmenting_path(graph, matching)
+    if path:
+        return find_maximum_matching(graph, matching.augment(path))
+    return matching
+
+
 good_pairs = set()  # type: set[tuple[int, int]]
 bad_pairs = set()  # type: set[tuple[int, int]]
 assert not check_pair(3, 5, good_pairs, bad_pairs)
@@ -100,6 +258,9 @@ assert not check_pair(13, 19, good_pairs, bad_pairs)
 assert check_pair(13, 21, good_pairs, bad_pairs)
 assert check_pair(19, 21, good_pairs, bad_pairs)
 assert not check_pair(2 ** 30 - 1, 1, good_pairs, bad_pairs)
+
+
+graph = Graph([1, 7, 3, 21, 13, 19])
 
 assert solution([3, 5]) == 2
 
