@@ -22,6 +22,7 @@ from typing import Generator
 
 # from fractions import gcd
 from math import gcd
+import copy
 
 
 def all_pairs(lst):
@@ -80,24 +81,24 @@ def solution(banana_list):
 
 class Graph:
     class Node:
-        def __init__(self, count) -> None:
-            # type: (int) -> None
-            self.count = count
+        def __init__(self):
+            # type: () -> None
             self.marked = False
 
     class Edge:
-        def __init__(self, node_1, node_2) -> None:
-            # type: (Graph.Node, Graph.Node) -> None
+        def __init__(self, node_1, node_2, reverse_edge=None):
+            # type: (Graph.Node, Graph.Node, Graph.Edge | None) -> None
             self.node_1 = node_1
             self.node_2 = node_2
             self.marked = False
+            self.reverse_edge = reverse_edge
 
     def __init__(self, banana_list):
         # type: (list[int]) -> None
-        self.nodes = [Graph.Node(count) for count in banana_list]
+        self.nodes = [Graph.Node() for _ in banana_list]
         self.neighbors = {
-            node: [] for node in self.nodes
-        }  # type: dict[Graph.Node, list[Graph.Edge]]
+            node: set() for node in self.nodes
+        }  # type: dict[Graph.Node, set[Graph.Edge]]
         good_pairs = set()  # type: set[tuple[int, int]]
         bad_pairs = set()  # type: set[tuple[int, int]]
         for i, trainer in enumerate(banana_list):
@@ -105,8 +106,11 @@ class Graph:
                 if check_pair(trainer, other_trainer, good_pairs, bad_pairs):
                     node = self.nodes[i]
                     other_node = self.nodes[j]
-                    self.neighbors[node].append(Graph.Edge(node, other_node))
-                    self.neighbors[other_node].append(Graph.Edge(other_node, node))
+                    edge = Graph.Edge(node, other_node)
+                    self.neighbors[node].add(edge)
+                    reverse_edge = Graph.Edge(other_node, node, edge)
+                    edge.reverse_edge = reverse_edge
+                    self.neighbors[other_node].add(reverse_edge)
 
     def unmark_all_nodes(self):
         # type: () -> None
@@ -129,6 +133,23 @@ class Graph:
             if not edge.marked:
                 return edge
 
+    def contract(self, blossom):
+        # type: (Blossom) -> Graph
+        contracted_node = Graph.Node()
+        graph_copy = copy.deepcopy(self)
+        graph_copy.nodes.append(contracted_node)
+        graph_copy.neighbors[contracted_node] = set()
+        for edge in blossom.edges:
+            graph_copy.neighbors[edge.node_1].remove(edge)
+            assert edge.reverse_edge, "Reverse edge can not be None"
+            graph_copy.neighbors[edge.node_2].remove(edge.reverse_edge)
+            for contracted_edge in graph_copy.neighbors[edge.node_1]:
+                contracted_edge.node_1 = contracted_node
+                assert contracted_edge.reverse_edge, "Reverse edge can not be None"
+                contracted_edge.reverse_edge.node_2 = contracted_node
+            graph_copy.nodes.remove(edge.node_1)
+        return graph_copy
+
 
 class Matching:
     nodes = set()  # type: set[Graph.Node]
@@ -144,16 +165,33 @@ class Matching:
         for edge in self.edges:
             edge.marked = True
 
+    def contract(self, blossom):
+        # type: (Blossom) -> Matching
+        contracted_matching = Matching()
+        contracted_matching.edges = {
+            edge.node_1: edge for edge in set(self.edges.values()) - blossom.edges
+        }
+        contracted_matching.nodes = self.nodes - blossom.nodes
+        return contracted_matching
 
-# class Path:
-#     def __init__(self, edges) -> None:
-#         # type: (list[Graph.Edge]) -> None
-#         self.edges = edges
+
+class Blossom:
+    def __init__(self, graph, unmarked_edge, tree_path):
+        # type: (Graph, Graph.Edge, list[Graph.Node]) -> None
+        self.nodes = set(tree_path)
+        self.unmarked_edge = unmarked_edge
+        self.edges = set()  # type: set[Graph.Edge]
+        self.edges.add(unmarked_edge)
+        for i in range(len(tree_path) - 1):
+            for edge in graph.neighbors[tree_path[i]]:
+                if edge.node_2 == tree_path[i + 1]:
+                    self.edges.add(edge)
+                    break
 
 
 class Forest:
     class Tree:
-        def __init__(self, node) -> None:
+        def __init__(self, node):
             # type: (Graph.Node) -> None
             self.root = node
             self.parents = {node: node}
@@ -172,7 +210,16 @@ class Forest:
                 node = self.parents[node]
             return result
 
-    def __init__(self, nodes) -> None:
+        def path_between_nodes(self, upper_node, lower_node):
+            # type: (Graph.Node, Graph.Node) -> list[Graph.Node]
+            result = []  # type: list[Graph.Node]
+            while self.parents[lower_node] != upper_node:
+                result.append(lower_node)
+                lower_node = self.parents[lower_node]
+            result.append(upper_node)
+            return result
+
+    def __init__(self, nodes):
         # type: (set[Graph.Node]) -> None
         self.trees = [Forest.Tree(node) for node in nodes]
 
@@ -217,12 +264,19 @@ def find_augmenting_path(graph, matching):
                 if tree.depths[w] % 2 == 0:
                     another_tree = forest.find_tree(w)
                     if another_tree and tree.root != another_tree.root:
-                        return list(reversed(tree.bottom_up_path(v))) + another_tree.bottom_up_path(w)
+                        return list(
+                            reversed(tree.bottom_up_path(v))
+                        ) + another_tree.bottom_up_path(w)
                     else:
-                        # contract
-                        # blossom = [e]
+                        # contraction stuff
+                        blossom = Blossom(graph, e, tree.path_between_nodes(v, w))
+                        contracted_graph = graph.contract(blossom)
+                        contracted_matching = matching.contract(blossom)
+                        contracted_path = find_augmenting_path(
+                            contracted_graph, contracted_matching
+                        )
+                        # TODO
 
-    raise NotImplementedError
     return []
 
 
