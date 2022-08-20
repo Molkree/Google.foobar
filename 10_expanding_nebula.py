@@ -54,6 +54,28 @@
 # be between 3 and 50 inclusive, and the height of the grid will be between 3 and 9
 # inclusive.  The solution will always be less than one billion (10^9).
 
+
 def solution(g):
     # type: (list[list[bool]]) -> int
     raise NotImplementedError
+
+
+grid = [[True, False, True], [False, True, False], [True, False, True]]
+assert solution(grid) == 4
+
+grid = [
+    [True, False, True, False, False, True, True, True],
+    [True, False, True, False, False, False, True, False],
+    [True, True, True, False, False, False, True, False],
+    [True, False, True, False, False, False, True, False],
+    [True, False, True, False, False, True, True, True],
+]
+assert solution(grid) == 254
+
+grid = [
+    [True, True, False, True, False, True, False, True, True, False],
+    [True, True, False, False, False, False, True, True, True, False],
+    [True, True, False, False, False, False, False, False, False, True],
+    [False, True, False, False, False, False, True, True, False, False],
+]
+assert solution(grid) == 11567
