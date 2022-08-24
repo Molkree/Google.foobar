@@ -55,9 +55,99 @@
 # inclusive.  The solution will always be less than one billion (10^9).
 
 
+from copy import deepcopy
+from itertools import product
+
+
 def solution(g):
     # type: (list[list[bool]]) -> int
-    raise NotImplementedError
+    all_preimages = list(product((True, False), repeat=4))
+    preimages = {
+        True: [preimage for preimage in all_preimages if preimage.count(True) == 1],
+        False: [preimage for preimage in all_preimages if preimage.count(True) != 1],
+    }
+    states = []  # type: list[list[list[bool | None]]]
+    for row_index in range(len(g)):
+        states = check_row(g, preimages, states, row_index)
+    return len(states)
+
+
+def check_row(g, preimages, states, row_index):
+    # type: (list[list[bool]], dict[bool, list[tuple[bool, ...]]], list[list[list[bool | None]]], int) -> list[list[list[bool | None]]]
+    prev_state_height = len(g) + 1
+    prev_state_width = len(g[0]) + 1
+    preimage_states = []  # type: list[list[list[bool | None]]]
+    for preimage in preimages[g[row_index][0]]:
+        prev_state = gen_prev_state(
+            prev_state_height, prev_state_width, preimage, row_index, 0
+        )
+        if row_index == 0:
+            preimage_states.append(prev_state)
+        else:  # find overlapping states
+            new_states = []  # type: list[list[list[bool | None]]]
+            for state in states:
+                if (
+                    state[row_index][0] == prev_state[row_index][0]
+                    and state[row_index][1] == prev_state[row_index][1]
+                ):
+                    new_state = deepcopy(state)
+                    new_state[row_index + 1][0] = prev_state[row_index + 1][0]
+                    new_state[row_index + 1][1] = prev_state[row_index + 1][1]
+                    new_states.append(new_state)
+            preimage_states.extend(new_states)
+    states = preimage_states
+    states = check_inner_cells(g, preimages, states, row_index)
+    return states
+
+
+def check_inner_cells(g, preimages, states, row_index):
+    # type: (list[list[bool]], dict[bool, list[tuple[bool, ...]]], list[list[list[bool | None]]], int) -> list[list[list[bool | None]]]
+    prev_state_height = len(g) + 1
+    prev_state_width = len(g[0]) + 1
+    for column_index in range(1, prev_state_width - 1):
+        preimage_states = []  # type: list[list[list[bool | None]]]
+        for preimage in preimages[g[row_index][column_index]]:
+            prev_state = gen_prev_state(
+                prev_state_height, prev_state_width, preimage, row_index, column_index
+            )
+            # find overlapping states
+            new_states = []  # type: list[list[list[bool | None]]]
+            for state in states:
+                if (
+                    state[row_index][column_index]
+                    == prev_state[row_index][column_index]
+                ):
+                    if (
+                        row_index > 0
+                        and state[row_index][column_index + 1]
+                        != prev_state[row_index][column_index + 1]
+                        or column_index > 0
+                        and state[row_index + 1][column_index]
+                        != prev_state[row_index + 1][column_index]
+                    ):
+                        continue
+                    new_state = deepcopy(state)
+                    new_state[row_index][column_index + 1] = prev_state[row_index][
+                        column_index + 1
+                    ]
+                    new_state[row_index + 1][column_index] = prev_state[row_index + 1][column_index]
+                    new_state[row_index + 1][column_index + 1] = prev_state[
+                        row_index + 1
+                    ][column_index + 1]
+                    new_states.append(new_state)
+            preimage_states.extend(new_states)
+        states = preimage_states
+    return states
+
+
+def gen_prev_state(height, width, preimage, row_index, column_index):
+    # type: (int, int, tuple[bool, ...], int, int) -> list[list[bool | None]]
+    prev_state = [[None for _ in range(width)] for _ in range(height)]  # type: list[list[bool | None]]
+    prev_state[row_index][column_index] = preimage[0]
+    prev_state[row_index][column_index + 1] = preimage[1]
+    prev_state[row_index + 1][column_index] = preimage[2]
+    prev_state[row_index + 1][column_index + 1] = preimage[3]
+    return prev_state
 
 
 grid = [[True, False, True], [False, True, False], [True, False, True]]
