@@ -74,7 +74,7 @@ def solution(g):
     # From these 2 column combinations we can calculate the next state of the (thin, 2 cell) grid
     mapping = defaultdict(
         list
-    )  # type: defaultdict[tuple[bool, ...], list[tuple[tuple[bool, ...], ...]]]
+    )  # type: defaultdict[tuple[bool, ...], list[tuple[tuple[bool, ...], tuple[bool, ...]]]]
     for preimage in preimages:
         image = []  # type: list[bool]
         for i in range(height):
@@ -85,19 +85,19 @@ def solution(g):
         mapping[tuple(image)].append(preimage)
 
     # We transpose original grid to work with columns, not rows
-    transposed = list(zip(*g))
+    transposed = list(zip(*g))  # type: list[tuple[bool, ...]]
 
     # Then for each column (now row) we check what could be the previous state
-    # and for each step from column to column we make sure that their previous states overlap
-    candidates = mapping[transposed[0]]
-    for row in transposed[1:]:
-        next_candidates = mapping[row]
-        filtered_candidates = []  # type: list[tuple[tuple[bool, ...], ...]]
-        for next_candidate, candidate in product(next_candidates, candidates):
-            if candidate[1] == next_candidate[0]:
-                filtered_candidates.append(next_candidate)
-        candidates = filtered_candidates
-    return len(candidates)
+    # and we propagate the number of possible previous states
+    candidates = defaultdict(int)  # type: defaultdict[tuple[bool, ...], int]
+    for preimage in mapping[transposed[0]]:
+        candidates[preimage[0]] = 1
+    for column in transposed:
+        next_candidates = defaultdict(int)  # type: defaultdict[tuple[bool, ...], int]
+        for preimage in mapping[column]:
+            next_candidates[preimage[1]] += candidates[preimage[0]]
+        candidates = next_candidates
+    return sum(candidates.values())
 
 
 grid = [[True, False, True], [False, True, False], [True, False, True]]
