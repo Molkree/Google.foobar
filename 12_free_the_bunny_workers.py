@@ -62,15 +62,21 @@
 #   [0, 2],
 #   [1, 2],
 # ]
+from itertools import combinations
 
 
 def solution(num_buns, num_required):
     # type: (int, int) -> list[list[int]]
-    return []
+    copies_count = num_buns - num_required + 1
+    bunnies = [[] for _ in range(num_buns)]  # type: list[list[int]]
+    for key, bunnies_indexes in enumerate(combinations(range(num_buns), copies_count)):
+        for bunny_index in bunnies_indexes:
+            bunnies[bunny_index].append(key)
+    return bunnies
 
 
 assert solution(3, 1) == [[0], [0], [0]]
-assert solution(2, 1) == [[0], [1]]
+assert solution(2, 2) == [[0], [1]]
 assert solution(3, 2) == [[0, 1], [0, 2], [1, 2]]
 assert solution(2, 1) == [[0], [0]]
 assert solution(4, 4) == [[0], [1], [2], [3]]
